@@ -1,16 +1,14 @@
 import random
 import re
 from astrbot.api.all import *
-from astrbot.api.event.filter import *
 
 @register("astrbot_plugin_dnd_dice", "ishu", "DND专属纯净吐槽骰娘", "1.0.0")
 class DndDicePlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
 
-    # 监听所有的消息，纯正则匹配，无需前缀
-    @filter.on_message()
-    async def on_dice_roll(self, event: MessageEvent):
+    # 核心修改：直接重写原生底层的消息接收方法，不使用任何装饰器，去掉 event 类型声明以防导包失败
+    async def on_message_received(self, event):
         # 获取用户纯文本输入，去掉前后空格
         msg = event.message_str.strip()
         
@@ -78,5 +76,5 @@ class DndDicePlugin(Star):
         else:
             result_text = f"你掷出了 {expr}，明细为 {rolls}{mod_str}，总计：{total}\n【DM吐槽】：{roast}"
             
-        # 直接输出结果，本地代码0延迟响应
+        # 核心修改：使用最稳定的 plain_result 进行输出
         yield event.plain_result(result_text)
