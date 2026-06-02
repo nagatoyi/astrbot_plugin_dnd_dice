@@ -1,6 +1,6 @@
 name: astrbot_plugin_dnd_dice
 display_name: 自用dnd骰子
-version: 1.0.3
+version: 1.0.4
 author: ishu
 desc: 简易dnd跑团骰子插件
 repo: https://github.com/nagatoyi/astrbot_plugin_dnd_dice
