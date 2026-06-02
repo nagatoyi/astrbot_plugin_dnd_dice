@@ -1,13 +1,15 @@
 import random
 import re
 from astrbot.api.all import *
+from astrbot.api.event.filter import *
 
-@register("astrbot_plugin_dnd_dice", "ishu", "极简纯净投掷插件", "1.0.2")
+@register("astrbot_plugin_dnd_dice", "ishu", "极简纯净投掷插件", "1.0.3")
 class SimpleDicePlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
 
-    # 依然使用最稳固的底层消息接收
+    # 依然使用全局事件拦截，避免 @command 的强制断流
+    @event_message_type(EventMessageType.ALL)
     async def on_message_received(self, event):
         msg = event.message_str.strip()
         
