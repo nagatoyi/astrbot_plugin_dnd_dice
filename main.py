@@ -1,50 +1,47 @@
 import random
 import re
 from astrbot.api.all import *
-from astrbot.api.event.filter import *
 
-@register("astrbot_plugin_dnd_dice", "ishu", "极简纯净投掷插件", "1.0.3")
+@register("astrbot_plugin_dnd_dice", "ishu", "优化版多面骰投掷插件(支持明细与总和)", "1.0.4")
 class SimpleDicePlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
 
-    # 依然使用全局事件拦截，避免 @command 的强制断流
-    @event_message_type(EventMessageType.ALL)
-    async def on_message_received(self, event):
-        msg = event.message_str.strip()
+    # 使用 @command 注册标准指令，触发词为 "r" 或 "roll"
+    @command("r")
+    async def roll_dice(self, event, dice_str: str):
+        # 使用正则表达式匹配类似 "3d4", "1d100", "d20" 的骰子表达式
+        match = re.match(r'^(\d*)d(\d+)$', dice_str.lower())
         
-        # 仅正则匹配纯粹的投骰表达式，例如 1d20, 2d6, 1d20+3
-        match = re.match(r'^(\d+)[dD](\d+)(?:([+-])(\d+))?$', msg)
         if not match:
+            yield event.plain_result("无法识别的骰子格式，请使用类似 3d4、1d100 或 d20 的标准格式！")
             return
-            
-        # ！！！核心关键：手动拉下闸门，拦截消息！！！
-        # 只要确认为骰子指令，立刻切断向后传递，禁止 AI 读取
-        if hasattr(event, 'stop_event'):
-            event.stop_event()
-            
-        num = int(match.group(1))
+
+        # 提取骰子数量 (N) 和 面数 (M)
+        num_dice_str = match.group(1)
+        num_dice = int(num_dice_str) if num_dice_str else 1 # 如果没有填数量，默认为1个
         sides = int(match.group(2))
-        
-        # 安全限制：防止骰子数量或面数过大导致崩溃
-        if num <= 0 or num > 50 or sides <= 1 or sides > 100:
+
+        # 增加安全限制，防止恶意掷骰导致服务器卡顿
+        if num_dice > 100:
+            yield event.plain_result("骰子数量过多，请限制在 100 个以内！")
             return
-            
-        mod_sign = match.group(3)
-        mod_val = int(match.group(4)) if match.group(4) else 0
-        
-        # 投掷并计算总和
-        total = sum(random.randint(1, sides) for _ in range(num))
-        
-        if mod_sign == '+':
-            total += mod_val
-        elif mod_sign == '-':
-            total -= mod_val
-            
-        # 拼装极简的投掷方式字符串
-        expr = f"{num}d{sides}{mod_sign}{mod_val}" if mod_sign else f"{num}d{sides}"
-        
-        # 仅输出投掷方式和结果
-        result_text = f"{expr} 结果是: {total}"
-        
-        yield event.plain_result(result_text)
+        if sides < 1:
+            yield event.plain_result("骰子面数必须大于 0！")
+            return
+
+        # 核心逻辑：投掷并记录每一次的结果
+        rolls = [random.randint(1, sides) for _ in range(num_dice)]
+        total_sum = sum(rolls)
+
+        # 结果格式化输出
+        if num_dice > 1:
+            # 如果投掷多个骰子，展示每个骰子的具体值和总和
+            rolls_str = ", ".join(map(str, rolls))
+            result_msg = f"🎲 投掷 {dice_str} 的结果: [{rolls_str}]，总和: {total_sum}"
+        else:
+            # 如果只投掷一个骰子，直接展示总和
+            result_msg = f"🎲 投掷 {dice_str} 的结果: {total_sum}"
+
+        # 通过新版框架最稳定的方式直接输出结果
+        yield event.plain_result(result_msg)
