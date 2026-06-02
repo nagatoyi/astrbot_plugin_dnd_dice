@@ -2,7 +2,7 @@ import random
 import re
 from astrbot.api.all import *
 
-@register("astrbot_plugin_simple_dice", "ishu", "极简纯净投掷插件", "1.0.0")
+@register("astrbot_plugin_dnd_dice", "ishu", "极简纯净投掷插件", "1.0.2")
 class SimpleDicePlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
