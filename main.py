@@ -2,12 +2,12 @@ import random
 import re
 from astrbot.api.all import *
 
-@register("astrbot_plugin_dnd_dice", "ishu", "极简纯净投掷插件", "1.0.1")
+@register("astrbot_plugin_simple_dice", "ishu", "极简纯净投掷插件", "1.0.0")
 class SimpleDicePlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
 
-    # 直接使用最底层的消息接收，屏蔽所有兼容性报错
+    # 依然使用最稳固的底层消息接收
     async def on_message_received(self, event):
         msg = event.message_str.strip()
         
@@ -15,6 +15,11 @@ class SimpleDicePlugin(Star):
         match = re.match(r'^(\d+)[dD](\d+)(?:([+-])(\d+))?$', msg)
         if not match:
             return
+            
+        # ！！！核心关键：手动拉下闸门，拦截消息！！！
+        # 只要确认为骰子指令，立刻切断向后传递，禁止 AI 读取
+        if hasattr(event, 'stop_event'):
+            event.stop_event()
             
         num = int(match.group(1))
         sides = int(match.group(2))
